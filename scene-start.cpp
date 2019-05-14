@@ -72,7 +72,7 @@ int nObjects = 0;    // How many objects are currenly in the scene.
 int currObject = -1; // The current object
 int toolObj = -1;    // The object currently being modified
 
-static void makeMenu(); // [Part J] Selection menu update. Prevent compilation erorr
+static void makeMenu(); // PART J. Selection menu update. Prevent compilation erorr
 
 //----------------------------------------------------------------------------
 //
@@ -273,13 +273,27 @@ static void addObject(int id) {
                      adjustScaleY, mat2(0.05, 0, 0, 10.0));
     glutPostRedisplay();
 
-    makeMenu(); // [Part J] Object selection sub-menu needs to be updated
+    makeMenu(); // PART J. Object selection sub-menu needs to be updated
+}
+
+// PART J. Duplicate object
+static void duplicateObject(int id) {
+    if (nObjects == maxObjects) {
+        return;
+    }
+    sceneObjs[nObjects] = sceneObjs[id];
+    toolObj = currObject = nObjects++;
+    setToolCallbacks(adjustLocXZ, camRotZ(),
+                     adjustScaleY, mat2(0.05, 0, 0, 10.0));
+    glutPostRedisplay();
+
+    makeMenu(); // PART J. Required for object selection sub-menu
+
 }
 
 //------The init function-----------------------------------------------------
 
-void init(void)
-{
+void init(void) {
     srand (time(NULL)); /* initialize random seed - so the starting scene varies */
     aiInit();
 
@@ -357,7 +371,7 @@ void drawMesh(SceneObject sceneObj) {
     // Set the model matrix - this should combine translation, rotation and scaling based on what's
     // in the sceneObj structure (see near the top of the program).
 
-    // [Part B] Object rotation
+    // PART B. Object rotation
     mat4 rotate = RotateX(-sceneObj.angles[0]) * RotateY(sceneObj.angles[1]) * RotateZ(sceneObj.angles[2]);
     mat4 model = Translate(sceneObj.loc) * Scale(sceneObj.scale) * rotate;
 
@@ -384,28 +398,28 @@ void display(void) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     CheckError(); // May report a harmless GL_INVALID_OPERATION with GLEW on the first frame
 
-    // [Part A] Set the view matrix
+    // PART A. Set the view matrix
     mat4 rotate = RotateX(camRotUpAndOverDeg) * RotateY(camRotSidewaysDeg);
     view = Translate(0.0, 0.0, -viewDist) * rotate;
 
     SceneObject lightObj1 = sceneObjs[1];
     vec4 lightPosition = view * lightObj1.loc;
 
-    // [Part I] Second light
+    // PART I. Second light
     SceneObject lightObj2 = sceneObjs[2];
     vec4 lightPosition2 = rotate * lightObj2.loc;
 
     glUniform4fv(glGetUniformLocation(shaderProgram, "LightPosition"), 1, lightPosition); CheckError();
     glUniform4fv(glGetUniformLocation(shaderProgram, "LightPosition2"), 1, lightPosition2); CheckError();
 
-    // [Part J] Passing the light locations
+    // PART J. Passing the light locations
     glUniform4fv(glGetUniformLocation(shaderProgram, "LightObj"), 1, lightObj1.loc); CheckError();
     glUniform4fv(glGetUniformLocation(shaderProgram, "LightObj2"), 1, lightObj2.loc); CheckError();
 
     glUniform3fv(glGetUniformLocation(shaderProgram, "LightColor"), 1, lightObj1.rgb); CheckError();
     glUniform3fv(glGetUniformLocation(shaderProgram, "LightColor2"), 1, lightObj2.rgb); CheckError();
 
-    // [Part H] Shine requires brightness to be passed
+    // PART H. Shine requires brightness to be passed
     glUniform1f(glGetUniformLocation(shaderProgram, "LightBrightness"), lightObj1.brightness); CheckError();
     glUniform1f(glGetUniformLocation(shaderProgram, "LightBrightness2"), lightObj2.brightness); CheckError();
 
@@ -447,7 +461,7 @@ static void groundMenu(int id) {
     glutPostRedisplay();
 }
 
-// [Part C] Adjusts the amounts of ambient and diffuse
+// PART C. Adjusts the amounts of ambient and diffuse
 static void adjustAmbientDiffuse(vec2 am_df) {
     sceneObjs[toolObj].ambient += am_df[0];
     sceneObjs[toolObj].diffuse += am_df[1];
@@ -468,7 +482,7 @@ static void adjustBlueBrightness(vec2 bl_br) {
     sceneObjs[toolObj].brightness+=bl_br[1];
 }
 
-// [Part C] Adjusts the amounts of specular light and shine
+// PART C. Adjusts the amounts of specular light and shine
 static void adjustSpecularShine(vec2 sp_sh) {
     sceneObjs[toolObj].specular += sp_sh[0];
     sceneObjs[toolObj].shine += sp_sh[1];
@@ -528,7 +542,7 @@ static void materialMenu(int id) {
         toolObj = currObject;
         setToolCallbacks(adjustRedGreen, mat2(1, 0, 0, 1),
                         adjustBlueBrightness, mat2(1, 0, 0, 1));
-    } else if (id == 20) { // [Part C] Ambient/Diffuse/Specilar/Shine
+    } else if (id == 20) { // PART C. Ambient/Diffuse/Specilar/Shine
         setToolCallbacks(adjustAmbientDiffuse, mat2(1, 0, 0, 1),
                         adjustSpecularShine, mat2(1, 0, 0, 1));
     }
@@ -537,7 +551,7 @@ static void materialMenu(int id) {
     }
 }
 
-// [Part J] Object selection menu
+// PART J. Object selection menu
 static void selectObjectMenu(int id) {
     int objectId = id - 100; // Object's actual index
     toolObj = objectId;
@@ -562,8 +576,13 @@ static void mainmenu(int id) {
         setToolCallbacks(adjustLocXZ, camRotZ(),
                          adjustScaleY, mat2(0.05, 0, 0, 10));
     }
-    if (id == 50)
+    if (id == 50) {
         doRotate();
+    }
+    if (id == 51) {
+        duplicateObject(currObject);
+    }
+
     if (id == 55 && currObject>=0) {
         setToolCallbacks(adjustAngleYX, mat2(400, 0, 0, -400),
                          adjustAngleZTexscale, mat2(400, 0, 0, 15));
@@ -587,7 +606,7 @@ static void makeMenu() {
     glutAddMenuEntry("Move Light 2",80);
     glutAddMenuEntry("R/G/B/All Light 2",81);
 
-    // [Part J] Selection of objects using a sub-menu
+    // PART J. Selection of objects using a sub-menu
     int selectObjMenuId = glutCreateMenu(selectObjectMenu);
     for (int i = 3; i < nObjects; i++) { // Exclude ground, lightObj1 and lightObj2
         char objectName[128]; // Same size used in gnatidread.h
@@ -604,11 +623,12 @@ static void makeMenu() {
     }
 
     glutCreateMenu(mainmenu);
-    glutAddMenuEntry("Rotate/Move Camera",50);
-    glutAddMenuEntry("Position/Scale", 41);
-    glutAddMenuEntry("Rotation/Texture Scale", 55);
+    glutAddMenuEntry("Rotate/Move Camera", 50);
     glutAddSubMenu("Add Object", objectId);
     glutAddSubMenu("Select Object", selectObjMenuId);
+    glutAddMenuEntry("Duplicate Object", 51);
+    glutAddMenuEntry("Position/Scale", 41);
+    glutAddMenuEntry("Rotation/Texture Scale", 55);
     glutAddSubMenu("Material", materialMenuId);
     glutAddSubMenu("Texture",texMenuId);
     glutAddSubMenu("Ground Texture",groundMenuId);
@@ -641,9 +661,9 @@ void reshape(int width, int height) {
 
     glViewport(0, 0, width, height);
 
-    GLfloat nearDist = 0.01; // [Part D] Close-up clipping
+    GLfloat nearDist = 0.01; // PART D. Close-up clipping
 
-    // [Part E] Window reshaping
+    // PART E. Window reshaping
     if (width < height) { // Ensure visibility is unchanged when width < height
         projection = Frustum(-nearDist, nearDist, -nearDist*(float)height/(float)width, nearDist*(float)height/(float)width, nearDist, 100.0);
     } else {
