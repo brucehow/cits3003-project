@@ -71,6 +71,7 @@ SceneObject sceneObjs[maxObjects]; // An array storing the objects currently in 
 int nObjects = 0;    // How many objects are currenly in the scene.
 int currObject = -1; // The current object
 int toolObj = -1;    // The object currently being modified
+int delObjects = 0; // How many deleted objects
 
 static void makeMenu(); // PART J. Selection menu update. Prevent compilation erorr
 
@@ -291,6 +292,14 @@ static void duplicateObject(int id) {
 
 }
 
+// PART J. Delete object
+static void deleteObject(int id) {
+    sceneObjs[currObject].meshId = NULL;
+    currObject = -1;
+    delObjects++;
+    makeMenu(); // PART J. Update object selection sub-menu
+}
+
 //------The init function-----------------------------------------------------
 
 void init(void) {
@@ -453,6 +462,7 @@ static void texMenu(int id) {
         sceneObjs[currObject].texId = id;
         glutPostRedisplay();
     }
+    makeMenu(); // [Part J] Object selection name update
 }
 
 static void groundMenu(int id) {
@@ -579,10 +589,12 @@ static void mainmenu(int id) {
     if (id == 50) {
         doRotate();
     }
-    if (id == 51) {
+    if (id == 51 && currObject >= 0) {
         duplicateObject(currObject);
     }
-
+    if (id == 52 && currObject >= 0) {
+        deleteObject(currObject);
+    }
     if (id == 55 && currObject>=0) {
         setToolCallbacks(adjustAngleYX, mat2(400, 0, 0, -400),
                          adjustAngleZTexscale, mat2(400, 0, 0, 15));
@@ -612,11 +624,12 @@ static void makeMenu() {
         char objectName[128]; // Same size used in gnatidread.h
         if (sceneObjs[i].meshId != NULL) {
             int objectId = 100 + i;
-            strcpy(objectName, objectMenuEntries[sceneObjs[i].texId - 1]);
-            strcat(objectName, " ");
-            strcat(objectName, textureMenuEntries[sceneObjs[i].meshId - 1]);
+            strcpy(objectName, objectMenuEntries[sceneObjs[i].meshId - 1]);
+            strcat(objectName, " (");
+            strcat(objectName, textureMenuEntries[sceneObjs[i].texId - 1]);
+            strcat(objectName, ")");
             if (currObject == i) { // Indicate currently selected object
-                strcat(objectName, " ✓");
+                strcat(objectName, " *");
             }
             glutAddMenuEntry(objectName, objectId);
         }
@@ -625,12 +638,17 @@ static void makeMenu() {
     glutCreateMenu(mainmenu);
     glutAddMenuEntry("Rotate/Move Camera", 50);
     glutAddSubMenu("Add Object", objectId);
-    glutAddSubMenu("Select Object", selectObjMenuId);
-    glutAddMenuEntry("Duplicate Object", 51);
-    glutAddMenuEntry("Position/Scale", 41);
-    glutAddMenuEntry("Rotation/Texture Scale", 55);
-    glutAddSubMenu("Material", materialMenuId);
-    glutAddSubMenu("Texture",texMenuId);
+    if (nObjects - 4 > delObjects) { // Part J. Show sub-menu when there are 2 > objects
+        glutAddSubMenu("Select Object", selectObjMenuId);
+    }
+    if (currObject != -1) { // Part J. Show only when an object is selected
+        glutAddMenuEntry("Duplicate Object", 51);
+        glutAddMenuEntry("Delete Object", 52);
+        glutAddMenuEntry("Position/Scale", 41);
+        glutAddMenuEntry("Rotation/Texture Scale", 55);
+        glutAddSubMenu("Material", materialMenuId);
+        glutAddSubMenu("Texture", texMenuId);
+    }
     glutAddSubMenu("Ground Texture",groundMenuId);
     glutAddSubMenu("Lights",lightMenuId);
     glutAddMenuEntry("EXIT", 99);
