@@ -16,13 +16,13 @@ uniform float Shininess;
 uniform vec4 LightPosition;
 uniform vec3 LightColor;
 uniform float LightBrightness;
-uniform vec4 LightObj; // [Part J] Location of light 1
+uniform vec4 LightObj; // PART J. Location of light 1
 
-// [Part I] Light Object 2
+// PART I. Light Object 2
 uniform vec4 LightPosition2;
 uniform vec3 LightColor2;
 uniform float LightBrightness2;
-uniform vec4 LightObj2; // [Part J] Location of light 2
+uniform vec4 LightObj2; // PART J. Location of light 2
 
 
 void main() {
@@ -70,7 +70,7 @@ void main() {
     // globalAmbient is independent of distance from the light source
     vec3 globalAmbient = vec3(0.1, 0.1, 0.1);
 
-    // [Part F] Reduction in light after a particular distance
+    // PART F. Reduction in light after a particular distance
     float lightDropoff = 0.01 + length(Lvec);
 
     color.rgb = globalAmbient + ((ambient + diffuse) / lightDropoff) + ambient2 + diffuse2;
@@ -78,7 +78,7 @@ void main() {
 
     gl_FragColor = (color * texture2D(texture, texCoord * 2.0)) + vec4(specular / lightDropoff + specular2, 1.0);
 
-    // [Part J] Checking for light under the surface
+    // PART J. Checking for light under the surface
     if (LightObj.y < 0.0 && LightObj2.y < 0.0) {
         color.rgb = globalAmbient;
         gl_FragColor = color * texture2D(texture, texCoord * 2.0);

@@ -73,7 +73,7 @@ int currObject = -1; // The current object
 int toolObj = -1;    // The object currently being modified
 int delObjects = 0; // How many deleted objects
 
-static void makeMenu(); // PART J. Selection menu update. Prevent compilation erorr
+static void makeMenu(); // PART J.2. Selection menu update. Prevent compilation erorr
 
 //----------------------------------------------------------------------------
 //
@@ -274,10 +274,10 @@ static void addObject(int id) {
                      adjustScaleY, mat2(0.05, 0, 0, 10.0));
     glutPostRedisplay();
 
-    makeMenu(); // PART J. Object selection sub-menu needs to be updated
+    makeMenu(); // PART J.2. Object selection sub-menu needs to be updated
 }
 
-// PART J. Duplicate object
+// PART J.3. Duplicate object
 static void duplicateObject(int id) {
     if (nObjects == maxObjects) {
         return;
@@ -288,16 +288,16 @@ static void duplicateObject(int id) {
                      adjustScaleY, mat2(0.05, 0, 0, 10.0));
     glutPostRedisplay();
 
-    makeMenu(); // PART J. Required for object selection sub-menu
+    makeMenu(); // PART J.2. Required for object selection sub-menu
 
 }
 
-// PART J. Delete object
+// PART J.4. Delete object
 static void deleteObject(int id) {
     sceneObjs[currObject].meshId = NULL;
     currObject = -1;
     delObjects++;
-    makeMenu(); // PART J. Update object selection sub-menu
+    makeMenu(); // PART J.2. Update object selection sub-menu
 }
 
 //------The init function-----------------------------------------------------
@@ -421,7 +421,7 @@ void display(void) {
     glUniform4fv(glGetUniformLocation(shaderProgram, "LightPosition"), 1, lightPosition); CheckError();
     glUniform4fv(glGetUniformLocation(shaderProgram, "LightPosition2"), 1, lightPosition2); CheckError();
 
-    // PART J. Passing the light locations
+    // PART J.1. Passing the light locations
     glUniform4fv(glGetUniformLocation(shaderProgram, "LightObj"), 1, lightObj1.loc); CheckError();
     glUniform4fv(glGetUniformLocation(shaderProgram, "LightObj2"), 1, lightObj2.loc); CheckError();
 
@@ -561,7 +561,7 @@ static void materialMenu(int id) {
     }
 }
 
-// PART J. Object selection menu
+// PART J.2. Object selection menu
 static void selectObjectMenu(int id) {
     int objectId = id - 100; // Object's actual index
     toolObj = objectId;
@@ -618,7 +618,7 @@ static void makeMenu() {
     glutAddMenuEntry("Move Light 2",80);
     glutAddMenuEntry("R/G/B/All Light 2",81);
 
-    // PART J. Selection of objects using a sub-menu
+    // PART J.2. Selection of objects using a sub-menu
     int selectObjMenuId = glutCreateMenu(selectObjectMenu);
     for (int i = 3; i < nObjects; i++) { // Exclude ground, lightObj1 and lightObj2
         char objectName[128]; // Same size used in gnatidread.h
@@ -638,10 +638,11 @@ static void makeMenu() {
     glutCreateMenu(mainmenu);
     glutAddMenuEntry("Rotate/Move Camera", 50);
     glutAddSubMenu("Add Object", objectId);
-    if (nObjects - 4 > delObjects) { // Part J. Show sub-menu when there are 2 > objects
+    // Part J.5. Show sub-menu when there are > 1 objects (excluding the ground and lights)
+    if (nObjects - delObjects - 3 > 1) {
         glutAddSubMenu("Select Object", selectObjMenuId);
     }
-    if (currObject != -1) { // Part J. Show only when an object is selected
+    if (currObject != -1) { // Part J.5. Show only when an object is selected
         glutAddMenuEntry("Duplicate Object", 51);
         glutAddMenuEntry("Delete Object", 52);
         glutAddMenuEntry("Position/Scale", 41);
