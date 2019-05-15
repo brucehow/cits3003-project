@@ -6,11 +6,13 @@ vec4 color;
 
 uniform sampler2D texture;
 
-// [Part G] Added variables for fragment lighting
+// PART G. Added variables for fragment lighting
 uniform vec3 AmbientProduct, DiffuseProduct, SpecularProduct;
 uniform mat4 ModelView;
 uniform mat4 Projection;
 uniform float Shininess;
+
+uniform float texScale; // PART 2A. Texture scale variable
 
 // Light Object 1
 uniform vec4 LightPosition;
@@ -76,17 +78,18 @@ void main() {
     color.rgb = globalAmbient + ((ambient + diffuse) / lightDropoff) + ambient2 + diffuse2;
     color.a = 1.0;
 
-    gl_FragColor = (color * texture2D(texture, texCoord * 2.0)) + vec4(specular / lightDropoff + specular2, 1.0);
+    gl_FragColor = (color * texture2D(texture, texCoord * 2.0 * texScale)) + vec4(specular / lightDropoff + specular2, 1.0);
+    // PART 2A. Multiply by texScale value
 
     // PART J. Checking for light under the surface
     if (LightObj.y < 0.0 && LightObj2.y < 0.0) {
         color.rgb = globalAmbient;
-        gl_FragColor = color * texture2D(texture, texCoord * 2.0);
+        gl_FragColor = color * texture2D(texture, texCoord * 2.0 * texScale);
     } else if (LightObj.y < 0.0) {
         color.rgb = globalAmbient + (ambient2 + diffuse2);
-        gl_FragColor = (color * texture2D(texture, texCoord * 2.0)) + vec4(specular2, 1.0);
+        gl_FragColor = (color * texture2D(texture, texCoord * 2.0 * texScale)) + vec4(specular2, 1.0);
     } else if (LightObj2.y < 0.0) {
         color.rgb = globalAmbient + ((ambient2 + diffuse2) / lightDropoff);
-        gl_FragColor = (color * texture2D(texture, texCoord * 2.0)) + vec4(specular / lightDropoff, 1.0);
+        gl_FragColor = (color * texture2D(texture, texCoord * 2.0 * texScale)) + vec4(specular / lightDropoff, 1.0);
     }
 }
