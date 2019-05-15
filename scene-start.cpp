@@ -19,6 +19,8 @@ GLint windowHeight=640, windowWidth=960;
 #include "gnatidread.h"
 #include "gnatidread2.h" // PART 2D.B. Include the additional gnatidread file
 
+#define PI 3.14159265359 // PART 2D. Defined for POST_TIME calculations
+
 using namespace std;        // Import the C++ standard functions (e.g., min)
 
 // IDs for the GLSL program and GLSL variables.
@@ -79,13 +81,15 @@ int currObject = -1; // The current object
 int toolObj = -1;    // The object currently being modified
 int delObjects = 0; // How many deleted objects
 
+// PART 2D. The POSE_TIME for the aniamtion
+float POSE_TIME = 0.0;
+
 static void makeMenu(); // PART J.2. Selection menu update. Prevent compilation erorr
 
 //----------------------------------------------------------------------------
 //
 // Loads a texture by number, and binds it for later use.
-void loadTextureIfNotAlreadyLoaded(int i)
-{
+void loadTextureIfNotAlreadyLoaded(int i) {
     if (textures[i] != NULL) return; // The texture is already loaded.
 
     textures[i] = loadTextureNum(i); CheckError();
@@ -262,13 +266,15 @@ static void doRotate()
 
 static void addObject(int id) {
 
+    if (nObjects >= maxObjects) return; // Just to be sure, potential fix to the FATAL ERROR?
+
     vec2 currPos = currMouseXYworld(camRotSidewaysDeg);
     sceneObjs[nObjects].loc[0] = currPos[0];
     sceneObjs[nObjects].loc[1] = 0.0;
     sceneObjs[nObjects].loc[2] = currPos[1];
     sceneObjs[nObjects].loc[3] = 1.0;
 
-    if (id!=0 && id!=55)
+    if (id != 0 && id != 55)
         sceneObjs[nObjects].scale = 0.005;
 
     sceneObjs[nObjects].rgb[0] = 0.7; sceneObjs[nObjects].rgb[1] = 0.7;
@@ -277,7 +283,8 @@ static void addObject(int id) {
     sceneObjs[nObjects].diffuse = 1.0; sceneObjs[nObjects].specular = 0.5;
     sceneObjs[nObjects].ambient = 0.7; sceneObjs[nObjects].shine = 10.0;
 
-    sceneObjs[nObjects].angles[0] = 0.0; sceneObjs[nObjects].angles[1] = 180.0;
+    sceneObjs[nObjects].angles[0] = 0.0;
+    sceneObjs[nObjects].angles[1] = 180.0;
     sceneObjs[nObjects].angles[2] = 0.0;
 
     sceneObjs[nObjects].meshId = id;
@@ -379,7 +386,6 @@ void init(void) {
 //----------------------------------------------------------------------------
 
 void drawMesh(SceneObject sceneObj) {
-
     // Activate a texture, loading if needed.
     loadTextureIfNotAlreadyLoaded(sceneObj.texId);
     glActiveTexture(GL_TEXTURE0);
@@ -417,7 +423,7 @@ void drawMesh(SceneObject sceneObj) {
 
     // Get boneTransforms for the first (0th) animation at the given time (a float measured in frames)
     mat4 boneTransforms[nBones]; // was: mat4 boneTransforms[mesh->mNumBones];
-    calculateAnimPose(meshes[sceneObj.meshId], scenes[sceneObj.meshId], 0, 1, boneTransforms);
+    calculateAnimPose(meshes[sceneObj.meshId], scenes[sceneObj.meshId], 0, POSE_TIME, boneTransforms);
     glUniformMatrix4fv(boneTransformsU, nBones, GL_TRUE, (const GLfloat *)boneTransforms);
 
     glDrawElements(GL_TRIANGLES, meshes[sceneObj.meshId]->mNumFaces * 3, GL_UNSIGNED_INT, NULL); CheckError();
@@ -467,7 +473,6 @@ void display(void) {
 
         drawMesh(sceneObjs[i]);
     }
-
     glutSwapBuffers();
 }
 
@@ -662,8 +667,8 @@ static void makeMenu() {
     glutCreateMenu(mainmenu);
     glutAddMenuEntry("Rotate/Move Camera", 50);
     glutAddSubMenu("Add Object", objectId);
-    // PART J.5. Show sub-menu when there are > 1 objects (excluding the ground and lights)
-    if (nObjects - delObjects - 3 > 1) {
+    // PART J.5. Show sub-menu if an object exists (excluding the ground and lights)
+    if (nObjects - delObjects - 3 > 0) {
         glutAddSubMenu("Select Object", selectObjMenuId);
     }
     if (currObject != -1) { // PART J.5. Show only when an object is selected
