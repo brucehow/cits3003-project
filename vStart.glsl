@@ -9,12 +9,25 @@ varying vec2 texCoord;
 uniform mat4 ModelView;
 uniform mat4 Projection;
 
-void main() {
-    vec4 vpos = vec4(vPosition, 1.0);
+// Added bone variables for Part 2D.A.
+attribute vec4 boneIDs;
+attribute vec4 boneWeights;
+uniform mat4 boneTransforms[64];
 
-    position = vpos;
-    normal = vNormal;
+void main() {
+    // PART 2D.A. Use type casting to convert float to int
+    mat4 boneTransform = boneWeights[0] * boneTransforms[int(boneIDs[0])] +
+                         boneWeights[1] * boneTransforms[int(boneIDs[1])] +
+                         boneWeights[2] * boneTransforms[int(boneIDs[2])] +
+                         boneWeights[3] * boneTransforms[int(boneIDs[3])];
+
+    // Transform the vertex position and vertex normal with boneTransform
+    vec4 positionTransform = boneTransform * vec4(vPosition, 1.0);
+    vec3 normalTransform = vec3(boneTransform) * vNormal;
+
+    position = positionTransform;
+    normal = normalTransform;
     texCoord = vTexCoord;
 
-    gl_Position = Projection * ModelView * vpos;
+    gl_Position = Projection * ModelView * positionTransform;
 }

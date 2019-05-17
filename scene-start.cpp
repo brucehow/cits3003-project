@@ -19,8 +19,6 @@ GLint windowHeight=640, windowWidth=960;
 #include "gnatidread.h"
 #include "gnatidread2.h" // PART 2D.B. Include the additional gnatidread file
 
-#define PI 3.14159265359 // PART 2D. Defined for POST_TIME calculations
-
 using namespace std;        // Import the C++ standard functions (e.g., min)
 
 // IDs for the GLSL program and GLSL variables.
