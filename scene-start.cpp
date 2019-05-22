@@ -19,6 +19,8 @@ GLint windowHeight=640, windowWidth=960;
 #include "gnatidread.h"
 #include "gnatidread2.h" // PART 2D.B. Include the additional gnatidread file
 
+#define PI 3.14159265359 // PART 2D. Defining PI for later calculations
+
 using namespace std;        // Import the C++ standard functions (e.g., min)
 
 // IDs for the GLSL program and GLSL variables.
@@ -69,6 +71,12 @@ typedef struct {
     int meshId;
     int texId;
     float texScale;
+    // PART 2D. Animation variables
+    unsigned int animStart; // Start of animation
+    float animCycle; // Number of full animations per cycles
+    float moveSpeed; // Animation travel speed
+    float moveDist; // Animation travel distance
+    bool hasAnim; // If the obj has animation
 } SceneObject;
 
 const int maxObjects = 1024; // Scenes with more than 1024 objects seem unlikely
@@ -79,8 +87,10 @@ int currObject = -1; // The current object
 int toolObj = -1;    // The object currently being modified
 int delObjects = 0; // How many deleted objects
 
-// PART 2D. The POSE_TIME for the aniamtion
+// PART 2D. The POSE_TIME (resume) and pause time for the aniamtion
+unsigned int animPause = 0;
 float POSE_TIME = 0.0;
+int numFrames = 300; // the animation frame rate
 
 static void makeMenu(); // PART J.2. Selection menu update. Prevent compilation erorr
 
@@ -264,16 +274,34 @@ static void doRotate()
 
 static void addObject(int id) {
 
-    if (nObjects >= maxObjects) return; // Just to be sure, potential fix to the FATAL ERROR?
+    if (nObjects >= maxObjects) return; // Potential fix to the Fatal Error: Out of Memory
 
     vec2 currPos = currMouseXYworld(camRotSidewaysDeg);
     sceneObjs[nObjects].loc[0] = currPos[0];
     sceneObjs[nObjects].loc[1] = 0.0;
     sceneObjs[nObjects].loc[2] = currPos[1];
     sceneObjs[nObjects].loc[3] = 1.0;
+    sceneObjs[nObjects].moveSpeed = 0.0;
+    sceneObjs[nObjects].moveDist = 0.0;
+    sceneObjs[nObjects].animCycle = 0.0;
+    sceneObjs[nObjects].animStart = 0.0;
+    sceneObjs[nObjects].hasAnim = false;
 
     if (id != 0 && id != 55)
         sceneObjs[nObjects].scale = 0.005;
+
+    if (id >= 56) {
+        sceneObjs[nObjects].scale *= 10; // PART 2C. Scale the human models by 10
+        if (animPause == 0) {
+            sceneObjs[nObjects].animStart = glutGet(GLUT_ELAPSED_TIME);
+        } else {
+            sceneObjs[nObjects].animStart = animPause;
+        }
+        sceneObjs[nObjects].moveSpeed = 0.05;
+        sceneObjs[nObjects].moveDist = 1.0;
+        sceneObjs[nObjects].animCycle = 1.0;
+        sceneObjs[nObjects].hasAnim = true;
+    }
 
     sceneObjs[nObjects].rgb[0] = 0.7; sceneObjs[nObjects].rgb[1] = 0.7;
     sceneObjs[nObjects].rgb[2] = 0.7; sceneObjs[nObjects].brightness = 1.0;
@@ -415,7 +443,7 @@ void drawMesh(SceneObject sceneObj) {
     loadMeshIfNotAlreadyLoaded(sceneObj.meshId); CheckError();
     glBindVertexArrayAPPLE(vaoIDs[sceneObj.meshId]); CheckError();
 
-    // PART 2D.7. Set the new uniform shader variable
+    // PART 2D.7. Set the new uniform shader variable (pulled from addingAnimation.txt)
     int nBones = meshes[sceneObj.meshId]->mNumBones;
     if (nBones == 0) nBones = 1; // If no bones, just a single identity matrix is used
 
@@ -469,7 +497,35 @@ void display(void) {
         glUniform3fv(glGetUniformLocation(shaderProgram, "SpecularProduct"), 1, so.specular * rgb);
         glUniform1f(glGetUniformLocation(shaderProgram, "Shininess"), so.shine); CheckError();
 
+        // PART 2D. Animation calculations
+        POSE_TIME = 0.0;
+        vec4 displacement = 0.0;
+
+        if (sceneObjs[i].meshId >= 56) {
+            float elapsedTime = 0.0;
+
+            // Animation constraints
+            if (sceneObjs[i].animCycle < 1.0) sceneObjs[i].animCycle = 1.0;
+            if (sceneObjs[i].moveSpeed <= 0.0) sceneObjs[i].moveSpeed = 0.1;
+            if (sceneObjs[i].moveDist <= 0.0) sceneObjs[i].moveDist = 0.1;
+
+            if (animPause == 0) { // Animation is not paused
+                 // Time since animation began
+                elapsedTime = float(glutGet(GLUT_ELAPSED_TIME) - sceneObjs[i].animStart) / 1000.0;
+            } else {
+                 // Time since animation began from animPause
+                elapsedTime = float((animPause - sceneObjs[i].animStart) / 1000.0);
+            }
+
+            float moveTime = sceneObjs[i].moveDist / sceneObjs[i].moveSpeed;
+            POSE_TIME = fmod((0.5 + 0.5 * sin(elapsedTime / moveTime * 2 * PI)) * sceneObjs[i].animCycle * numFrames, numFrames);
+            mat4 rotate = RotateZ(sceneObjs[i].angles[2]) * RotateY(sceneObjs[i].angles[1]) * RotateX(sceneObjs[i].angles[0]);
+            displacement = rotate * vec4(0.0, 0.0, -0.5 * sceneObjs[i].moveDist * sin(elapsedTime / moveTime * 2 * PI), 0.0);
+            sceneObjs[i].loc += displacement;
+        }
+
         drawMesh(sceneObjs[i]);
+        sceneObjs[i].loc -= displacement; // PART 2D. Return loc back for the next display callback
     }
     glutSwapBuffers();
 }
@@ -523,6 +579,18 @@ static void adjustBlueBrightness(vec2 bl_br) {
 static void adjustSpecularShine(vec2 sp_sh) {
     sceneObjs[toolObj].specular += sp_sh[0];
     sceneObjs[toolObj].shine += sp_sh[1];
+}
+
+// PART 2D. Adjusts the animation movement speed and dist
+static void adjustMoveSpeedMoveDist(vec2 ms_md) {
+    sceneObjs[toolObj].moveSpeed += ms_md[0];
+    sceneObjs[toolObj].moveDist += ms_md[1];
+}
+
+// Adjusts the animation cycle and movement distance
+static void adjustAnimCycleMoveDist(vec2 ac_md) {
+    sceneObjs[toolObj].animCycle += ac_md[0];
+    sceneObjs[toolObj].moveDist += ac_md[1];
 }
 
 static void lightMenu(int id) {
@@ -596,6 +664,35 @@ static void selectObjectMenu(int id) {
     makeMenu();
 }
 
+// PART 2D. Animation menu
+static void animationMenu(int id) {
+    if (id == 60 && currObject >= 0) { // Animation moveSpeed, animCycle and moveDist
+        setToolCallbacks(adjustMoveSpeedMoveDist, mat2(10, 0, 0, 10),
+                         adjustAnimCycleMoveDist, mat2(10, 0, 0, 10));
+    }
+    if (id == 61 && currObject >= 0) { // Animation reset
+        if (animPause == 0) {
+            sceneObjs[currObject].animStart = glutGet(GLUT_ELAPSED_TIME);
+        } else {
+            sceneObjs[currObject].animStart = animPause;
+        }
+    }
+    if (id == 62 && currObject >= 0) { // Pause all animations
+        animPause = glutGet(GLUT_ELAPSED_TIME);
+        makeMenu(); // Update menue to remove pause option
+    }
+    if (id == 63 && currObject >= 0) { // Resume all animations
+        unsigned int animResume = glutGet(GLUT_ELAPSED_TIME);
+        for (int i = 0; i < nObjects; i++) {
+            if (sceneObjs[i].hasAnim) {
+                sceneObjs[i].animStart += animResume - animPause; // Current time - time when paused
+            }
+        }
+        animPause = 0;
+        makeMenu(); // Update menue to remove resume option
+    }
+}
+
 static void adjustAngleYX(vec2 angle_yx) {
     sceneObjs[currObject].angles[1]+=angle_yx[0];
     sceneObjs[currObject].angles[0]+=angle_yx[1];
@@ -662,6 +759,18 @@ static void makeMenu() {
         }
     }
 
+    // PART 2D. Animation control using a sub-menu
+    int animationMenuId = glutCreateMenu(animationMenu);
+    if (sceneObjs[currObject].hasAnim) {
+        glutAddMenuEntry("Cycle/Movement", 60);
+        glutAddMenuEntry("Reset Animation", 61);
+    }
+    if (animPause == 0) {
+        glutAddMenuEntry("Pause All Animations", 62);
+    } else {
+        glutAddMenuEntry("Resume All Animations", 63);
+    }
+
     glutCreateMenu(mainmenu);
     glutAddMenuEntry("Rotate/Move Camera", 50);
     glutAddSubMenu("Add Object", objectId);
@@ -677,8 +786,9 @@ static void makeMenu() {
         glutAddSubMenu("Material", materialMenuId);
         glutAddSubMenu("Texture", texMenuId);
     }
-    glutAddSubMenu("Ground Texture",groundMenuId);
-    glutAddSubMenu("Lights",lightMenuId);
+    glutAddSubMenu("Animation", animationMenuId);
+    glutAddSubMenu("Ground Texture", groundMenuId);
+    glutAddSubMenu("Lights", lightMenuId);
     glutAddMenuEntry("EXIT", 99);
     glutAttachMenu(GLUT_RIGHT_BUTTON);
 }
