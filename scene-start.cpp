@@ -454,7 +454,7 @@ void drawMesh(SceneObject sceneObj) {
     if (ANIM_SPEED < 0.1) ANIM_SPEED = 0.1;
 
     if (!ANIM_PAUSED) {
-        POSE_TIME += ANIM_SPEED/100;
+        POSE_TIME += ANIM_SPEED/10;
     }
 
     glDrawElements(GL_TRIANGLES, meshes[sceneObj.meshId]->mNumFaces * 3, GL_UNSIGNED_INT, NULL); CheckError();
