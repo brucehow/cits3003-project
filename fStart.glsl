@@ -89,7 +89,7 @@ void main() {
         color.rgb = globalAmbient + (ambient2 + diffuse2);
         gl_FragColor = (color * texture2D(texture, texCoord * 2.0 * texScale)) + vec4(specular2, 1.0);
     } else if (LightObj2.y < 0.0) {
-        color.rgb = globalAmbient + ((ambient2 + diffuse2) / lightDropoff);
+        color.rgb = globalAmbient + ((ambient + diffuse) / lightDropoff);
         gl_FragColor = (color * texture2D(texture, texCoord * 2.0 * texScale)) + vec4(specular / lightDropoff, 1.0);
     }
 }
