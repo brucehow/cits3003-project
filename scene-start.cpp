@@ -282,15 +282,17 @@ static void addObject(int id) {
     if (id != 0 && id != 55)
         sceneObjs[nObjects].scale = 0.005;
 
-    if (id >= 56) {
+    if (id == 56) {
         sceneObjs[nObjects].scale *= 10; // PART 2C. Scale the human models by 10
-        if (id == 56) {
-            sceneObjs[nObjects].frames = 300; // Custom frame rates for each models
-        } else if (id >= 57) {
-            sceneObjs[nObjects].frames = 250;
-        }
+        sceneObjs[nObjects].frames = 300;
         sceneObjs[nObjects].hasAnim = true;
     }
+    if (id >= 57) {
+        sceneObjs[nObjects].scale *= 12; // Custom scaling for more reasonable sizing
+        sceneObjs[nObjects].frames = 250; // Custom frame rate
+        sceneObjs[nObjects].hasAnim = true;
+    }
+
 
     sceneObjs[nObjects].rgb[0] = 0.7; sceneObjs[nObjects].rgb[1] = 0.7;
     sceneObjs[nObjects].rgb[2] = 0.7; sceneObjs[nObjects].brightness = 1.0;
