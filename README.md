@@ -2,4 +2,4 @@
 <b>Authors:</b> Bruce How ([22242664](https://github.com/brucehow/))
 
 ## Discretion
-These files should be used as a guideline to understanding the project. Copying the code in any way risks Academic Misconduct at the University of Western Australia. Discretion is advised. Please refer to the Wiki of this project for information about each type of Centrality and its implementation.
+These files should be used as a guideline to understanding the project. Copying the code in any way risks Academic Misconduct at the University of Western Australia. Discretion is advised.
