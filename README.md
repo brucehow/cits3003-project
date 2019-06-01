@@ -12,4 +12,4 @@ Part 2 of the project has 40 marks. You are expected to produce at least three a
 [Part 1 specification](http://teaching.csse.uwa.edu.au/units/CITS3003/labsheet.php?fname=project-2019/project-part1) [Part 2 specification](http://teaching.csse.uwa.edu.au/units/CITS3003/labsheet.php?fname=project-2019/project-part2)
 
 ## Discretion
-These files should be used as a guideline to understanding the project. Copying the code in any way risks Academic Misconduct at the University of Western Australia. Discretion is advised.
+These files should be used as a guideline to understanding the project. Copying the code in any way risks Academic Misconduct at the University of Western Australia. Discretion is advised. Note that the program will not run with just the above files. The model textures folder has not been uploaded for copyright reasons.
